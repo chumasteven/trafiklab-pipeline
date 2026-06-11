@@ -1,2 +1,3 @@
 confluent-kafka==2.14.2
 gtfs-realtime-bindings==2.0.0
+python-dotenv==1.2.2
