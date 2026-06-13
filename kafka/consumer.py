@@ -4,6 +4,7 @@ from confluent_kafka import KafkaError, KafkaException
 from google.cloud import storage
 from datetime import datetime
 import os
+import time
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
 
@@ -11,7 +12,7 @@ load_dotenv()  # Load environment variables from .env file
 # configure the path to your Google Cloud credentials
 google_credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 
-conf = {'bootstrap.servers': 'localhost:9092',
+conf = {'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"), # Kafka broker address
         'group.id': 'writer',
         'auto.offset.reset': 'smallest'}
 
@@ -30,8 +31,9 @@ def msg_process(msg):
 def basic_consume_loop(consumer, topics):
     try:
         consumer.subscribe(topics)
+        start_time = time.time() # Record the start time of the consumer loop
 
-        while running:
+        while running and (time.time() - start_time < 240): # Run the loop for 4 minutes (240 seconds)
             msg = consumer.poll(timeout=1.0) # Adjust the timeout as needed
             if msg is None: continue
 

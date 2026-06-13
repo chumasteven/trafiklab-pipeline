@@ -15,7 +15,7 @@ api_key = os.getenv("TRAFIKLAB_REALTIME_API_KEY")
 TOPIC = 'gtfs-realtime-updates'
 
 # Kafka producer configuration
-conf = {'bootstrap.servers': 'localhost:9092',
+conf = {'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"), # Kafka broker address
         'client.id': socket.gethostname()}
 producer = Producer(conf)
 
