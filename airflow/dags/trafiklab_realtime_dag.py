@@ -19,4 +19,10 @@ with DAG(
         bash_command="python /opt/airflow/project/kafka/consumer.py"
     )
 
-    run_producer >> run_consumer # Set the producer to run before the consumer
+    run_transform = BashOperator(
+    task_id="run_transform",
+    bash_command="cd /opt/airflow/project/pyspark && python transform_realtime.py",
+    )
+
+
+    run_producer >> run_consumer >> run_transform # Set the producer to run before the consumer
