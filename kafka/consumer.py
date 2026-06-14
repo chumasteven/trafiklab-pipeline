@@ -20,7 +20,7 @@ running = True # This variable will be used to control the consumer loop and all
 
 def msg_process(msg):
     data = msg.value()
-    file_name = f"gtfs_realtime_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}.pb" # Create a unique file name based on the current timestamp
+    file_name = f"gtfs_realtime_v2_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}.pb" # Create a unique file name based on the current timestamp
     client = storage.Client.from_service_account_json(
     os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
     bucket = client.bucket("trafiklab-raw-data")

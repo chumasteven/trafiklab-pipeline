@@ -1,28 +1,31 @@
 from pyspark.sql import SparkSession
 from google.transit import gtfs_realtime_pb2
-import pathlib
+from google.cloud import storage
 from pyspark.sql.functions import col
-
+from pyspark.sql.functions import round
 
 spark = SparkSession.builder.appName("transform_realtime").getOrCreate()
+storage_client = storage.Client.from_service_account_json("../trafiklab-pipeline-499120-733d37d4cd82.json")
+
 
 rows = []
-for file in pathlib.Path("data/realtime").glob("*.pb"):
-    with open(file, "rb") as f:
-        entity = gtfs_realtime_pb2.FeedEntity()
-        entity.ParseFromString(f.read())
+for blob in storage_client.list_blobs("trafiklab-raw-data", prefix="gtfs_realtime_v2"):
+    feed = gtfs_realtime_pb2.FeedMessage()
+    feed.ParseFromString(blob.download_as_bytes())
 
-    trip_id = entity.trip_update.trip.trip_id
+    for entity in feed.entity:
+        if not entity.HasField("trip_update"):
+            continue
+        trip_id = entity.trip_update.trip.trip_id
 
-
-    for stu in entity.trip_update.stop_time_update:
-        rows.append(
-            (trip_id,
-            stu.stop_sequence,
-            stu.stop_id,
-            stu.arrival.delay,
-            stu.arrival.time)
-            )
+        for stu in entity.trip_update.stop_time_update:
+            rows.append(
+                (trip_id,
+                stu.stop_sequence,
+                stu.stop_id,
+                stu.arrival.delay,
+                stu.arrival.time)
+                )
 
 df = spark.createDataFrame(rows, ["trip_id", "stop_sequence", "stop_id", "delay", "arrival_time"])
 df.show()
@@ -94,3 +97,16 @@ final_df.show()
 final_df.printSchema()
 
 print(joined_df.filter(col("route_short_name").isNull()).count())
+
+final_df = final_df.withColumn("delay_minutes", round(col("delay") / 60, 1))
+final_df.show()
+
+from google.cloud import bigquery
+pdf = final_df.toPandas()
+client = bigquery.Client.from_service_account_json("../trafiklab-pipeline-499120-733d37d4cd82.json")
+table_id = "trafiklab-pipeline-499120.trafiklab_staging.realtime_delays"
+
+job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
+job = client.load_table_from_dataframe(pdf, table_id, job_config=job_config)
+job.result()  # wait for it to finish
+print("Loaded", job.output_rows, "rows to", table_id)
