@@ -6,3 +6,9 @@ df = spark.read.option("header", "true").option("inferSchema", "true").csv("data
 df.show(5)
 df.printSchema()
 df.groupBy("stop_id").count().show(15)
+
+stops_df = spark.read.option("header", "true").option("inferSchema", "true").csv("data/static/stops.txt")
+stops_df.show(5)
+stops_df.printSchema()
+
+
