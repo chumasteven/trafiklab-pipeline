@@ -1,0 +1,42 @@
+name: dbt CI
+
+on:                          # WHEN: run on every push and PR
+  push:
+  pull_request:
+
+jobs:
+  dbt-build:
+    runs-on: ubuntu-latest   # a fresh Linux VM, nothing pre-installed
+    steps:
+      - uses: actions/checkout@v4          # 1. pull your repo onto the runner
+
+      - uses: actions/setup-python@v5      # 2. install Python
+        with:
+          python-version: "3.11"
+
+      - run: pip install dbt-bigquery      # 3. install dbt + the BQ adapter
+
+      - name: Write key from secret        # 4. recreate the keyfile from the secret
+        run: echo "$BIGQUERY_SA_KEY" > ci-keyfile.json
+        env:
+          BIGQUERY_SA_KEY: ${{ secrets.BIGQUERY_SA_KEY }}
+
+      - name: Write dbt profile            # 5. a CI profiles.yml pointing at that key
+        run: |
+          mkdir -p ci
+          cat > ci/profiles.yml <<'EOF'
+          trafiklab_dbt:
+            target: ci
+            outputs:
+              ci:
+                type: bigquery
+                method: service-account
+                project: trafiklab-pipeline-499120
+                dataset: trafiklab_staging
+                threads: 4
+                location: europe-north1
+                keyfile: ci-keyfile.json
+          EOF
+
+      - name: dbt build                    # 6. the actual check: build + test
+        run: dbt build --project-dir trafiklab_dbt --profiles-dir ci
