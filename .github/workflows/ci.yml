@@ -17,7 +17,7 @@ jobs:
       - run: pip install dbt-bigquery      # 3. install dbt + the BQ adapter
 
       - name: Write key from secret        # 4. recreate the keyfile from the secret
-        run: echo "$BIGQUERY_SA_KEY" > ci-keyfile.json
+        run: echo "$BIGQUERY_SA_KEY" > "${{ github.workspace }}/ci-keyfile.json"
         env:
           BIGQUERY_SA_KEY: ${{ secrets.BIGQUERY_SA_KEY }}
 
@@ -35,7 +35,7 @@ jobs:
                 dataset: trafiklab_staging
                 threads: 4
                 location: europe-north1
-                keyfile: ci-keyfile.json
+                keyfile: ${{ github.workspace }}/ci-keyfile.json
           EOF
 
       - name: dbt build                    # 6. the actual check: build + test
