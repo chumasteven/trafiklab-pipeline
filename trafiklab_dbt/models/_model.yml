@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_realtime_delays
+    columns:
+      - name: trip_id
+        tests:
+          - not_null
+      - name: stop_id
+        tests:
+          - not_null
+      - name: line
+        tests:
+          - not_null
+
+  - name: mart_line_performance
+    columns:
+      - name: line
+        tests:
+          - not_null
+          - unique         
+      - name: stop_events
+        tests:
+          - not_null

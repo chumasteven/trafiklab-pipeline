@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: trafiklab_staging
+    database: trafiklab-pipeline-499120   # GCP project id
+    schema: trafiklab_staging              # the BigQuery dataset
+    tables:
+      - name: realtime_delays              # your Spark-loaded table
