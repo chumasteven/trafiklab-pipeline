@@ -33,7 +33,7 @@ GTFS Sweden 3 static (stops · trips · routes) ──────────�
 | Distributed transform | **PySpark** 4.1 |
 | Warehouse | **BigQuery** |
 | Transformation / modelling | **dbt** (dbt-bigquery) |
-| BI | **Looker Studio** |
+| BI | **Data Studio (Looker Studio)** |
 | Data | Trafiklab GTFS-RT + GTFS Sweden 3 static (protobuf + GTFS CSV) |
 
 ---
