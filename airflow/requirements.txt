@@ -6,3 +6,5 @@ pyspark==4.1.2
 google-cloud-bigquery==3.41.0
 pandas==2.3.3
 pyarrow==21.0.0
+dbt-core==1.9.0
+dbt-bigquery==1.9.0
