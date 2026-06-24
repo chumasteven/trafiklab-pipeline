@@ -24,5 +24,9 @@ with DAG(
     bash_command="cd /opt/airflow/project/pyspark && python transform_realtime.py",
     )
 
+    run_dbt = BashOperator(
+        task_id="run_dbt",
+        bash_command="cd /opt/airflow/project/trafiklab_dbt && dbt run",
+    )
 
-    run_producer >> run_consumer >> run_transform # Set the producer to run before the consumer
+    run_producer >> run_consumer >> run_transform >> run_dbt # Set the producer to run before the consumer, transform, and dbt

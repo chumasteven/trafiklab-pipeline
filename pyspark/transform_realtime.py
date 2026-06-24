@@ -3,8 +3,17 @@ from google.transit import gtfs_realtime_pb2
 from google.cloud import storage
 from pyspark.sql.functions import col
 from pyspark.sql.functions import round
+from pyspark.sql.functions import broadcast
+spark = SparkSession.builder \
+    .master("local[2]") \
+    .appName("transform_realtime") \
+    .config("spark.driver.memory", "1g") \
+    .config("spark.executor.heartbeatInterval", "60s") \
+    .config("spark.network.timeout", "120s") \
+    .getOrCreate()
 
-spark = SparkSession.builder.appName("transform_realtime").getOrCreate()
+
+
 storage_client = storage.Client.from_service_account_json("../trafiklab-pipeline-499120-733d37d4cd82.json")
 
 
@@ -40,7 +49,7 @@ stops_df.printSchema()
 
 # Join the real-time data with the static stops data to get stop names
 stops_df = stops_df.withColumn("stop_id", col("stop_id").cast("string")) 
-joined_df = df.join(stops_df, on="stop_id", how="left") # here that both dataframes have a column named "stop_id" and we want to join on that column. The "on" parameter specifies the column to join on, and the "how" parameter specifies the type of join (in this case, a left join).
+joined_df = df.join(broadcast(stops_df), on="stop_id", how="left") # here that both dataframes have a column named "stop_id" and we want to join on that column. The "on" parameter specifies the column to join on, and the "how" parameter specifies the type of join (in this case, a left join).
 joined_df.select(
     "trip_id",
     "stop_sequence",
@@ -61,7 +70,7 @@ trips_df = spark.read.option("header", "true").option("inferSchema", "true").csv
 trips_df.printSchema()
 
 trips_df = trips_df.withColumn("trip_id", col("trip_id").cast("string"))
-joined_df = joined_df.join(trips_df, on="trip_id", how="left")
+joined_df = joined_df.join(broadcast(trips_df), on="trip_id", how="left")
 joined_df.select(
     "trip_id",
     "route_id",
@@ -77,11 +86,11 @@ routes_df = spark.read.option("header", "true").option("inferSchema", "true").cs
 routes_df.printSchema()
 
 
-joined_df = joined_df.join(routes_df.select(
+joined_df = joined_df.join(broadcast(routes_df.select(
     "route_id",
     "route_short_name",
     "route_long_name"
-), on="route_id", how="left")
+)), on="route_id", how="left")
 
 final_df = joined_df.select(
     "route_short_name",

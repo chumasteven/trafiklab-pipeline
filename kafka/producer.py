@@ -25,7 +25,7 @@ def delivery_report(err, msg):
         print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
 
 # Fetch GTFS real-time data
-response = requests.get(f"https://opendata.samtrafiken.se/gtfs-rt-sweden/ul/TripUpdatesSweden.pb?key={api_key}")
+response = requests.get(f"https://opendata.samtrafiken.se/gtfs-rt-sweden/ul/TripUpdatesSweden.pb?key={api_key}", timeout=10)
 response.raise_for_status()  # Check if the request was successful
 
 producer.produce(TOPIC, response.content, callback=delivery_report)
