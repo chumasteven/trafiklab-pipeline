@@ -1,0 +1,11 @@
+trafiklab_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: trafiklab-pipeline-499120
+      dataset: trafiklab_staging
+      threads: 4
+      location: europe-north1
+      keyfile: /opt/airflow/project/trafiklab-pipeline-499120-733d37d4cd82.json
