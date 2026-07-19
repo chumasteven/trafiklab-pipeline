@@ -9,5 +9,6 @@ select
     round(delay / 60.0, 1)     as delay_minutes,
     arrival_time as arrival_unix,
     timestamp_seconds(arrival_time) as arrival_ts,
-    arrival_time > 0 as has_valid_arrival_time
+    arrival_time > 0 as has_valid_arrival_time,
+    route_short_name is not null as is_route_resolved
 from {{ source('trafiklab_staging', 'realtime_delays') }}

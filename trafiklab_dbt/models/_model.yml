@@ -9,9 +9,18 @@ models:
       - name: stop_id
         tests:
           - not_null
+      # `line` is an enrichment, not a key: it is resolved by joining the
+      # realtime feed to the static GTFS snapshot. GTFS-RT emits ADDED trips
+      # that are absent from any static publish, so a small share of rows can
+      # never resolve. Warn on the normal residue, error only if the static
+      # ingest has actually broken.
       - name: line
         tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
+                warn_if: ">1000"
+                error_if: ">100000"
 
   - name: mart_line_performance
     columns:

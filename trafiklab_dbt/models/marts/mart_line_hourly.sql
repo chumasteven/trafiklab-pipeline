@@ -6,4 +6,5 @@ select
     round(avg(case when delay_seconds between {{ var('on_time_early_secs') }} and {{ var('on_time_late_secs') }} then 1.0 else 0 end) * 100, 1) as pct_on_time
 from {{ref('stg_realtime_delays')}} 
 where has_valid_arrival_time
+  and is_route_resolved
 group by line, hour_of_day
