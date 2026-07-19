@@ -15,8 +15,12 @@ spark = SparkSession.builder \
 
 
 storage_client = storage.Client.from_service_account_json("../trafiklab-pipeline-499120-733d37d4cd82.json")
+bucket = storage_client.bucket("trafiklab-raw-data")
+for filename in ["stops.txt", "trips.txt", "routes.txt"]:
+    blob = bucket.blob(f"gtfs_static/latest/{filename}")
+    blob.download_to_filename(f"data/static/{filename}")
 
-
+# Process each blob in the storage bucket
 rows = []
 for blob in storage_client.list_blobs("trafiklab-raw-data", prefix="gtfs_realtime_v2"):
     feed = gtfs_realtime_pb2.FeedMessage()
@@ -35,14 +39,14 @@ for blob in storage_client.list_blobs("trafiklab-raw-data", prefix="gtfs_realtim
                 stu.arrival.delay,
                 stu.arrival.time)
                 )
-
+# Create a DataFrame from the rows
 df = spark.createDataFrame(rows, ["trip_id", "stop_sequence", "stop_id", "delay", "arrival_time"])
 df.show()
 df.printSchema()
 print(df.count())
 print(df.select("trip_id").distinct().count())
 
-
+# Read the static stops data from a CSV file (A static stops.txt file is part of the GTFS data and contains information about the stops, including their names and locations. This data is used to enrich the real-time data with stop names.)
 stops_df = spark.read.option("header", "true").option("inferSchema", "true").csv("data/static/stops.txt")
 stops_df.show(5)
 stops_df.printSchema()
@@ -64,8 +68,9 @@ print(joined_df.filter(col("stop_name").isNull()).count())
 print(stops_df.filter(col("stop_id").startswith("9022")).count())
 stops_df.filter(col("stop_id") == "9022050004565001").show()
 
-
-# Hop 1
+# We need to join the real-time data with the static trips data to get route IDs. The trips.txt file contains information about the trips, including their route IDs. By joining the real-time data with the static trips data, we can enrich the real-time data with route IDs.
+# Using hops to join the dataframes in a step-by-step manner. This approach allows us to break down the join operations into smaller, more manageable steps, making it easier to understand and debug the code.
+# Hop 1 - (Join the real-time data with the static trips data to get route IDs)
 trips_df = spark.read.option("header", "true").option("inferSchema", "true").csv("data/static/trips.txt")
 trips_df.printSchema()
 
@@ -81,7 +86,8 @@ joined_df.select(
     "arrival_time"
 ).show()
 
-#hop 2
+
+# Hop 2 - (Join the real-time data with the static routes data to get route names)
 routes_df = spark.read.option("header", "true").option("inferSchema", "true").csv("data/static/routes.txt")
 routes_df.printSchema()
 
